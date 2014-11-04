@@ -86,8 +86,6 @@ define(function (require) {
             mapCenter = self._attr.lastCenter = map.getCenter();
           });
 
-          // TODO: need to add UI options to allow 
-          // users to select one of these four map types
           if (data.geoJSON) {
             if (self._attr.mapType === 'Cluster Markers') {
               self.clusterMarkers(map, data.geoJSON);
@@ -99,6 +97,7 @@ define(function (require) {
               self.coloredCircleMarkers(map, data.geoJSON);
             }
           }
+          
           if (data.geoJSON.properties.label) {
             self.addLabel(data.geoJSON.properties.label, map);
           }
