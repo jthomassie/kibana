@@ -314,7 +314,7 @@ define(function (require) {
             color: self.darkerColor(color),
             weight: 1,
             opacity: 1,
-            fillOpacity: 1
+            fillOpacity: 0.7
           };
         }
       }).addTo(map);

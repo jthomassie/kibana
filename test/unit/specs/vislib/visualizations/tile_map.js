@@ -31,8 +31,8 @@ define(function (require) {
     });
 
     // Tests
-    describe();
-    describe();
-    describe();
+    //describe();
+    //describe();
+    //describe();
   });
 });
