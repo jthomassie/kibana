@@ -12,7 +12,7 @@ define(function (require) {
         defaults: {
           mapType: 'Shaded Circle Markers'
         },
-        mapTypes: ['Shaded Circle Markers', 'Scaled Circle Markers'],
+        mapTypes: ['Shaded Circle Markers', 'Scaled Circle Markers', 'Cluster Markers'],
         editor: require('text!plugins/vis_types/vislib/editors/tile_map.html')
       },
       responseConverter: TileMapConverter,

@@ -3,6 +3,7 @@ define(function (require) {
     var _ = require('lodash');
     var $ = require('jquery');
     var L = require('leaflet');
+    require('markercluster');
 
     var Chart = Private(require('components/vislib/visualizations/_chart'));
     var errors = require('errors');
@@ -124,8 +125,10 @@ define(function (require) {
           if (data.geoJSON) {
             if (self._attr.mapType === 'Scaled Circle Markers') {
               self.scaledCircleMarkers(map, data.geoJSON);
-            } else {
+            } else if (self._attr.mapType === 'Shaded Circle Markers') {
               self.shadedCircleMarkers(map, data.geoJSON);
+            } else if (self._attr.mapType === 'Cluster Markers') {
+              self.clusterMarkers(map, data.geoJSON);
             }
           }
 
@@ -249,6 +252,53 @@ define(function (require) {
       if (mapData.features.length > 1) {
         self.addLegend(mapData, map);
       }
+    };
+
+    /**
+     * Type of data overlay for map:
+     * uses leaflet plug-in to create featurelayer from mapData (geoJSON)
+     * with clustered markers that change with the map zoom
+     *
+     * @method clusterMarkers
+     * @param map {Object}
+     * @param mapData {Object}
+     * @return {undefined}
+     */
+    TileMap.prototype.clusterMarkers = function (map, mapData) {
+      var self = this;
+      var min = mapData.properties.min;
+      var max = mapData.properties.max;
+      var length = mapData.properties.length;
+      var precision = mapData.properties.precision;
+
+      var clusterGroup = new L.MarkerClusterGroup({
+        iconCreateFunction: function (cluster) {
+          var children = cluster.getAllChildMarkers();
+          var sum = 0;
+          for (var i = 0; i < children.length; i++) {
+            sum += children[i].feature.properties.count;
+          }
+          var rad = Math.sqrt(sum);
+          return new L.DivIcon({
+            html: sum,
+            className: 'custom-marker-cluster',
+            iconSize: L.point(rad, rad)
+          });
+        }
+      });
+
+      //var clusterGroup = new L.MarkerClusterGroup({
+      //  maxClusterRadius: 120,
+      //  disableClusteringAtZoom: 9
+      //});
+
+      var featureLayer = L.geoJson(mapData, {
+        onEachFeature: function (feature, layer) {
+          self.bindPopup(feature, layer);
+          clusterGroup.addLayer(layer);
+        }
+      });
+      map.addLayer(clusterGroup);
     };
 
     /**
