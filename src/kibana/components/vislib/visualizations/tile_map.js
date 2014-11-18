@@ -79,7 +79,7 @@ define(function (require) {
           });
 
           var mapOptions = {
-            minZoom: 2,
+            minZoom: 1,
             maxZoom: 16,
             layers: mapLayer,
             center: mapCenter,
@@ -159,7 +159,7 @@ define(function (require) {
         pointToLayer: function (feature, latlng) {
           var count = feature.properties.count;
 
-          var rad = zoomScale * self.radiusScale(count, max, precision);
+          var rad = zoomScale * self.scaledRadius(count, max, precision);
           return L.circleMarker(latlng, {
             radius: rad
           });
@@ -215,11 +215,17 @@ define(function (require) {
       var precision = mapData.properties.precision;
       var zoomScale = self.zoomScale(mapZoom);
       var bounds;
-      var defaultColor = '#005baa';
+
+      // reverse order of features
+      var features = _.sortBy(mapData.features, function (feature) {
+        return feature.properties.count;
+      });
+      mapData.features = features;
+
       var featureLayer = L.geoJson(mapData, {
         pointToLayer: function (feature, latlng) {
           var count = feature.properties.count;
-          var rad = zoomScale * 3;
+          var rad = zoomScale * 1;
           return L.circleMarker(latlng, {
             radius: rad
           });
@@ -244,6 +250,7 @@ define(function (require) {
         mapZoom = map.getZoom();
         bounds = map.getBounds();
         self.resizeFeatures(map, min, max, precision, featureLayer);
+
       });
 
       // add legend
@@ -332,19 +339,20 @@ define(function (require) {
     TileMap.prototype.resizeFeatures = function (map, min, max, precision, featureLayer) {
       var self = this;
       var zoomScale = self.zoomScale(mapZoom);
+      var rad;
 
       featureLayer.eachLayer(function (layer) {
         var latlng = L.latLng(layer.feature.geometry.coordinates[1], layer.feature.geometry.coordinates[0]);
 
         var count = layer.feature.properties.count;
-        var rad;
         if (self._attr.mapType === 'Shaded Circle Markers') {
-          rad = zoomScale * self.quantRadiusScale(precision);
+          rad = self.shadedRadius(precision, mapZoom);
         } else {
-          rad = zoomScale * self.radiusScale(count, max, precision);
+          rad = self.scaledRadius(count, max, precision, mapZoom);
         }
         layer.setRadius(rad);
       });
+
     };
 
     /**
@@ -381,112 +389,124 @@ define(function (require) {
      * factor for circle marker radius to display more
      * consistent circle size as you zoom in or out
      *
-     * @method radiusScale
+     * @method scaledRadius
      * @param value {Number}
      * @param max {Number}
      * @return {Number}
      */
     TileMap.prototype.zoomScale = function (zoom) {
       var zScale = d3.scale.pow()
-        .exponent(4)
-        .domain([1, 12])
-        .range([0.3, 100]);
+        .exponent(2)
+        .domain([1, 16])
+        .range([1, 256]);
       return zScale(zoom);
     };
 
     /**
-     * radiusScale returns a circle radius from
+     * scaledRadius returns a circle radius from
      * approx. square root of count
      * which is multiplied by a factor based on the geohash precision
      * for relative sizing of markers
      *
-     * @method radiusScale
+     * @method scaledRadius
      * @param count {Number}
      * @param max {Number}
      * @param precision {Number}
      * @return {Number}
      */
-    TileMap.prototype.radiusScale = function (count, max, precision) {
-      // exp = 0.5 for true square root ratio
-      // exp = 1 for linear ratio
-      var exp = 0.6;
+    TileMap.prototype.scaledRadius = function (count, max, precision, zoom) {
       var maxr;
       switch (precision) {
         case 1:
-          maxr = 200;
+          maxr = 80;
           break;
         case 2:
-          maxr = 30;
+          maxr = 20;
           break;
         case 3:
-          maxr = 9;
+          maxr = 10;
           break;
         case 4:
-          maxr = 3;
+          maxr = 5;
           break;
         case 5:
-          maxr = 1.44;
+          maxr = 2.5;
           break;
         case 6:
-          maxr = 1.12;
+          maxr = 1.3;
           break;
         case 7:
           maxr = 0.6;
           break;
         case 8:
-          maxr = 0.3;
+          maxr = 0.4;
           break;
         case 9:
-          maxr = 0.22;
+          maxr = 0.2;
           break;
         default:
           maxr = 9;
       }
-      return Math.pow(count, exp) / Math.pow(max, exp) * maxr;
+
+      var zScale = d3.scale.pow()
+        .exponent(2)
+        .domain([1, 16])
+        .range([0.01, 2.56]);
+
+      // exp = 0.5 for square root ratio
+      // exp = 1 for linear ratio
+      var exp = 0.5;
+      return Math.pow(100 * count / max, exp) * maxr * zScale(zoom);
     };
 
     /**
      * returns a number to scale circle markers
      * based on the geohash precision
      *
-     * @method quantRadiusScale
+     * @method shadedRadius
      * @param precision {Number}
      * @return {Number}
      */
-    TileMap.prototype.quantRadiusScale = function (precision) {
+    TileMap.prototype.shadedRadius = function (precision, zoom) {
       var maxr;
       switch (precision) {
         case 1:
-          maxr = 100;
+          maxr = 50;
           break;
         case 2:
-          maxr = 12;
+          maxr = 8;
           break;
         case 3:
-          maxr = 3;
+          maxr = 3.0;
           break;
         case 4:
-          maxr = 0.6;
+          maxr = 0.8;
           break;
         case 5:
-          maxr = 0.3;
+          maxr = 0.20;
           break;
         case 6:
-          maxr = 0.22;
+          maxr = 0.040;
           break;
         case 7:
-          maxr = 0.18;
+          maxr = 0.022;
           break;
         case 8:
-          maxr = 0.16;
+          maxr = 0.018;
           break;
         case 9:
-          maxr = 0.14;
+          maxr = 0.014;
           break;
         default:
           maxr = 3;
       }
-      return maxr;
+
+      var zScale = d3.scale.pow()
+        .exponent(2)
+        .domain([1, 8, 16])
+        .range([1, 50, 300]);
+
+      return maxr * zScale(zoom);
     };
 
     /**
