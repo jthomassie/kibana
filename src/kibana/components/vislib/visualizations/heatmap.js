@@ -33,13 +33,14 @@ define(function (require) {
       };
     }
 
-    HeatMap.prototype.addRowLabels = function (svg, data, gridWidth, gridHeight, margin) {
+    HeatMap.prototype.addRowLabels = function (svg, data, gridHeight, margin) {
       var self = this;
       var halfLabelHeight = 3;
       var rowLeftOffset = -3;
       var minGridLabelHeight = 9;
       var padding = 3;
       var formatter = data.rowFormatter;
+      var maxRowTextLength = self.maxRowTextLength = 0;
 
       if (gridHeight >= minGridLabelHeight) {
         var rowLabels = svg.selectAll('.rowLabel')
@@ -58,7 +59,8 @@ define(function (require) {
         });
 
         rowLabels.attr('transform', 'translate(-3,' + ((gridHeight * 0.5) + halfLabelHeight) + ')');
-        if (self.maxTextLength(rowLabels) + padding <= margin.left) {
+        maxRowTextLength = self.maxTextLength(rowLabels);
+        if (maxRowTextLength + padding <= margin.left) {
           return rowLabels.text(function (d) {
             return d.label;
           });
@@ -67,14 +69,16 @@ define(function (require) {
           return null;
         });
       }
+      return null;
     };
 
-    HeatMap.prototype.addColLabels = function (svg, data, gridWidth, gridHeight, height, margin) {
+    HeatMap.prototype.addColLabels = function (svg, data, gridWidth, height, margin) {
       var self = this;
       var colTopOffset = -10;
       var minGridLabelWidth = 9;
       var padding = 3;
       var formatter = data.columnFormatter;
+      var maxColTextLength = self.maxColTextLength = 0;
 
       if (gridWidth >= minGridLabelWidth) {
         var colLabels = svg.selectAll('.colLabel')
@@ -91,7 +95,8 @@ define(function (require) {
         .attr('class', function (d) {
           return 'heat-axis-label ' + d.x;
         });
-        if (self.maxTextLength(colLabels) + padding <= gridWidth) {
+        maxColTextLength = self.maxTextLength(colLabels);
+        if (maxColTextLength + padding <= gridWidth) {
           return colLabels.text(function (d) {
             return formatter ? formatter(d.x) : d.x;
           });
@@ -228,8 +233,8 @@ define(function (require) {
 
           var heatMap = self.addRects(svg, data, gridWidth, gridHeight);
 
-          var rowLabels = self.addRowLabels(svg, data, gridWidth, gridHeight, margin);
-          var colLabels = self.addColLabels(svg, data, gridWidth, gridHeight, height, margin);
+          var rowLabels = self.addRowLabels(svg, data, gridHeight, margin);
+          var colLabels = self.addColLabels(svg, data, gridWidth, height, margin);
 
           if (isTooltip) {
             heatMap.call(tooltip.render());
