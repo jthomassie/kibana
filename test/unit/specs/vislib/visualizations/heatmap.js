@@ -115,9 +115,7 @@ define(function (require) {
             var gridWidth = width / widthN;
             var maxTextLength = chart.maxColTextLength;
 
-            if (gridWidth < minGridLabelWidth) {
-              expect($('.heat-axis-label').length).to.be(0);
-            } else if (gridWidth >= minGridLabelWidth && (maxTextLength + padding) <= gridWidth) {
+            if (gridWidth >= minGridLabelWidth && (maxTextLength + padding) <= gridWidth) {
               expect($('.heat-axis-label').length).to.be.greaterThan(0);
             }
           });
