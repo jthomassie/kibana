@@ -1,0 +1,12 @@
+.aws-config.json
+.DS_Store
+node_modules
+bower_components
+**/*.css
+trash
+build
+target
+.jruby
+.idea
+*.iml
+esvm

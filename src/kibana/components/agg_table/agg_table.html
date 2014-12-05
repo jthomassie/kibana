@@ -1,0 +1,13 @@
+<paginated-table
+  ng-if="formattedRows.length"
+  rows="formattedRows"
+  columns="formattedColumns"
+  per-page="perPage">
+
+  <div class="agg-table-controls">
+    <a class="small" ng-click="aggTable.exportAsCsv()">
+      Export <i class="fa fa-download"></i>
+    </a>
+    <paginate-controls></paginate-controls>
+  </div>
+</paginated-table>
