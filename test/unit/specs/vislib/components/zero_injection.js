@@ -11,6 +11,156 @@ define(function (require) {
   angular.module('ZeroFilledArrayUtilService', ['kibana']);
 
   describe('Vislib Zero Injection Module Test Suite', function () {
+    var dateHistogramRows = {
+      'rows': [
+        {
+          'label': 'Top 5 @tags: success',
+          'ordered': {
+            'date': true,
+            'interval': 60000,
+            'min': 1418410540548,
+            'max': 1418410936568
+          },
+          'series': [
+            {
+              'label': 'jpg',
+              'values': [
+                { 'x': 1418410560000, 'y': 2 },
+                { 'x': 1418410620000, 'y': 4 },
+                { 'x': 1418410680000, 'y': 1 },
+                { 'x': 1418410740000, 'y': 5 },
+                { 'x': 1418410800000, 'y': 2 },
+                { 'x': 1418410860000, 'y': 3 },
+                { 'x': 1418410920000, 'y': 2 }
+              ]
+            },
+            {
+              'label': 'css',
+              'values': [
+                { 'x': 1418410560000, 'y': 1 },
+                { 'x': 1418410620000, 'y': 3 },
+                { 'x': 1418410680000, 'y': 1 },
+                { 'x': 1418410740000, 'y': 4 },
+                { 'x': 1418410800000, 'y': 2 }
+              ]
+            },
+            {
+              'label': 'gif',
+              'values': [
+                { 'x': 1418410500000, 'y': 1 },
+                { 'x': 1418410680000, 'y': 3 },
+                { 'x': 1418410740000, 'y': 2 }
+              ]
+            }
+          ]
+        },
+        {
+          'label': 'Top 5 @tags: info',
+          'ordered': {
+            'date': true,
+            'interval': 60000,
+            'min': 1418410540548,
+            'max': 1418410936568
+          },
+          'series': [
+            {
+              'label': 'jpg',
+              'values': [
+                { 'x': 1418410560000, 'y': 4 },
+                { 'x': 1418410620000, 'y': 2 },
+                { 'x': 1418410680000, 'y': 1 },
+                { 'x': 1418410740000, 'y': 5 },
+                { 'x': 1418410800000, 'y': 2 },
+                { 'x': 1418410860000, 'y': 3 },
+                { 'x': 1418410920000, 'y': 2 }
+              ]
+            },
+            {
+              'label': 'css',
+              'values': [
+                { 'x': 1418410620000, 'y': 3 },
+                { 'x': 1418410680000, 'y': 1 },
+                { 'x': 1418410740000, 'y': 4 },
+                { 'x': 1418410800000, 'y': 2 }
+              ]
+            },
+            {
+              'label': 'gif',
+              'values': [
+                { 'x': 1418410500000, 'y': 1 }
+              ]
+            }
+          ]
+        },
+        {
+          'label': 'Top 5 @tags: security',
+          'ordered': {
+            'date': true,
+            'interval': 60000,
+            'min': 1418410540548,
+            'max': 1418410936568
+          },
+          'series': [
+            {
+              'label': 'jpg',
+              'values': [
+                { 'x': 1418410560000, 'y': 1 },
+                { 'x': 1418410620000, 'y': 3 },
+                { 'x': 1418410920000, 'y': 2 }
+              ]
+            },
+            {
+              'label': 'gif',
+              'values': [
+                { 'x': 1418410680000, 'y': 3 },
+                { 'x': 1418410740000, 'y': 1 }
+              ]
+            }
+          ]
+        },
+        {
+          'label': 'Top 5 @tags: login',
+          'ordered': {
+            'date': true,
+            'interval': 60000,
+            'min': 1418410540548,
+            'max': 1418410936568
+          },
+          'series': [
+            {
+              'label': 'jpg',
+              'values': [
+                { 'x': 1418410740000, 'y': 1 }
+              ]
+            },
+            {
+              'label': 'css',
+              'values': [
+                { 'x': 1418410560000, 'y': 1 }
+              ]
+            }
+          ]
+        },
+        {
+          'label': 'Top 5 @tags: warning',
+          'ordered': {
+            'date': true,
+            'interval': 60000,
+            'min': 1418410540548,
+            'max': 1418410936568
+          },
+          'series': [
+            {
+              'label': 'jpg',
+              'values': [
+                { 'x': 1418410860000, 'y': 2 }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
     var seriesData = {
       series: [
         {
@@ -178,7 +328,7 @@ define(function (require) {
         expect(_.isFunction(injectZeros)).to.be(true);
       });
 
-      it('should return an object with series[0].values"', function () {
+      it('should return an object with series[0].values', function () {
         expect(_.isObject(sample1)).to.be(true);
         expect(_.isObject(sample1.series[0].values)).to.be(true);
       });
@@ -514,6 +664,48 @@ define(function (require) {
         expect(results[4].y).to.be(0);
       });
     });
+
+
+
+    describe('Injected Zero values return in the correct order', function () {
+      var injectZeros;
+      var flattenData;
+      var results;
+
+      beforeEach(function () {
+        module('ZeroInjectionUtilService');
+      });
+
+      beforeEach(function () {
+        inject(function (Private) {
+          injectZeros = Private(require('components/vislib/components/zero_injection/inject_zeros'));
+          results = injectZeros(dateHistogramRows);
+        });
+      });
+
+      it('should return an array of objects', function () {
+        console.log(results);
+        expect(_.isArray(results.rows[0].series[0].values)).to.be(true);
+        expect(_.isArray(results.rows[1].series[0].values)).to.be(true);
+        expect(_.isArray(results.rows[2].series[0].values)).to.be(true);
+        expect(_.isArray(results.rows[3].series[0].values)).to.be(true);
+        expect(_.isArray(results.rows[4].series[0].values)).to.be(true);
+      });
+
+      it('should return ordered x values', function () {
+        var values = results.rows[0].series[0].values;
+        console.log(values);
+        expect(values[0].x).to.be.lessThan(values[1].x);
+        expect(values[1].x).to.be.lessThan(values[2].x);
+        expect(values[2].x).to.be.lessThan(values[3].x);
+        expect(values[3].x).to.be.lessThan(values[4].x);
+        expect(values[4].x).to.be.lessThan(values[5].x);
+        expect(values[5].x).to.be.lessThan(values[6].x);
+        expect(values[6].x).to.be.lessThan(values[7].x);
+      });
+    });
+
+
 
   });
 });
