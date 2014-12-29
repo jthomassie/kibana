@@ -175,7 +175,10 @@ define(function (require) {
       .append('div')
       // class name needs `chart` in it for the polling checkSize function
       // to continuously call render on resize
-      .attr('class', 'visualize-error chart error');
+
+      .attr('class', 'text-center visualize-error visualize-chart ng-scope chart error')
+      .append('div')
+      .attr('class', 'item');
 
       if (message === 'No results found') {
         div.append('h2')
