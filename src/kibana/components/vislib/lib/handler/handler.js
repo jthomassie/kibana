@@ -173,20 +173,23 @@ define(function (require) {
 
       var div = d3.select(this.el)
       .append('div')
-      // class name needs `chart` in it for the polling checkSize function
-      // to continuously call render on resize
+      .attr('class', 'text-center visualize-error visualize-chart ng-scope');
+      div.append('div')
+      .attr('class', 'item top');
 
-      .attr('class', 'text-center visualize-error visualize-chart ng-scope chart error')
-      .append('div')
+      var errordiv = div.append('div')
       .attr('class', 'item');
 
       if (message === 'No results found') {
-        div.append('h2')
+        errordiv.append('h2')
         .html('<i class="fa fa-meh-o"></i>');
       }
 
-      div.append('h4')
+      errordiv.append('h4')
       .text(message);
+
+      div.append('div')
+      .attr('class', 'item bottom');
 
       return div;
     };
