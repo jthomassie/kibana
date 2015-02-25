@@ -12,7 +12,7 @@ define(function (require) {
     var mapData;
     var mapCenter = [15, 5];
     var mapZoom = 2;
-    var minMapSize = 60;
+    var minMapSize = 80;
 
     /**
      * Tile Map Visualization: renders maps
@@ -60,6 +60,7 @@ define(function (require) {
 
       return function (selection) {
         selection.each(function (data) {
+
           div = $(this);
           div.addClass('tilemap');
 
@@ -70,7 +71,6 @@ define(function (require) {
             mapCenter = self._attr.lastCenter;
           }
 
-          var featureLayer;
           var tileLayer = L.tileLayer('http://otile{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
             attribution: 'Tiles by <a href="http://www.mapquest.com/">MapQuest</a> &mdash; ' +
               'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
@@ -80,7 +80,7 @@ define(function (require) {
 
           var mapOptions = {
             minZoom: 2,
-            maxZoom: 16,
+            maxZoom: 18,
             layers: tileLayer,
             center: mapCenter,
             zoom: mapZoom,
@@ -94,15 +94,27 @@ define(function (require) {
           var map = L.map(div[0], mapOptions);
           self.maps.push(map);
 
+          var featureLayer;
+
           tileLayer.on('tileload', saturateTiles);
 
           map.on('unload', function () {
             tileLayer.off('tileload', saturateTiles);
           });
 
-          map.on('zoomend dragend', function setZoomCenter() {
+          map.on('moveend', function setZoomCenter() {
             mapZoom = self._attr.lastZoom = map.getZoom();
             mapCenter = self._attr.lastCenter = map.getCenter();
+          });
+
+          map.on('move', function() {
+            console.log('move');
+            featureLayer.clearLayers();
+            if (self._attr.mapType === 'Scaled Circle Markers') {
+              featureLayer = self.scaledCircleMarkers(map, data.geoJson);
+            } else {
+              featureLayer = self.shadedCircleMarkers(map, data.geoJson);
+            }
           });
 
           if (data.geoJson) {
@@ -188,16 +200,25 @@ define(function (require) {
             opacity: 1,
             fillOpacity: 0.75
           };
+        },
+        filter: function (feature) {
+          var latlng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+          console.log(map, self.pointInMap(map, latlng));
+          return self.pointInMap(map, latlng);
         }
       }).addTo(map);
       self.resizeFeatures(map, min, max, precision, featureLayer);
-      map.on('zoomend dragend', function () {
+      map.on('moveend', function () {
         mapZoom = map.getZoom();
         bounds = map.getBounds();
-        self.resizeFeatures(map, min, max, precision, featureLayer);
+        //self.resizeFeatures(map, min, max, precision, featureLayer);
       });
 
       return featureLayer;
+    };
+
+    TileMap.prototype.pointInMap = function (map, latlng) {
+      return map.getBounds().contains(latlng);
     };
 
     /**
@@ -228,13 +249,21 @@ define(function (require) {
       var zoomScale = self.zoomScale(mapZoom);
       var bounds;
       var defaultColor = '#005baa';
+
       var featureLayer = L.geoJson(mapData, {
         pointToLayer: function (feature, latlng) {
           var count = feature.properties.count;
           var rad = zoomScale * 3;
-          return L.circleMarker(latlng, {
-            radius: rad
-          });
+          // var precisionSize = [0, 4900000, 624000, 156000, 19000, 4450, 550, 120, 16];
+          // return L.circleMarker(latlng, {
+          //   radius: rad
+          // });
+
+          // return L.circle(latlng, precisionSize[precision]/2);
+
+          var gh = feature.properties.rectangle;
+          var bounds = [[gh[0][1], gh[0][0]], [gh[2][1], gh[2][0]]];
+          return L.rectangle(bounds);
         },
         onEachFeature: function (feature, layer) {
           self.bindPopup(feature, layer);
@@ -249,17 +278,23 @@ define(function (require) {
             opacity: 1,
             fillOpacity: 0.75
           };
+        },
+        filter: function (feature) {
+          var latlng = L.latLng(feature.geometry.coordinates[1], feature.geometry.coordinates[0]);
+          //console.log(map, self.pointInMap(map, latlng));
+          return self.pointInMap(map, latlng);
         }
       }).addTo(map);
+
       self.resizeFeatures(map, min, max, precision, featureLayer);
-      map.on('zoomend dragend', function () {
+      map.on('moveend', function () {
         mapZoom = map.getZoom();
         bounds = map.getBounds();
         self.resizeFeatures(map, min, max, precision, featureLayer);
       });
 
       // add legend
-      if (mapData.features.length > 1) {
+      if (mapData.features.length > 1 && !self._attr.hasLegend) {
         self.addLegend(mapData, map);
       }
 
@@ -329,6 +364,7 @@ define(function (require) {
         return div;
       };
       legend.addTo(map);
+      self._attr.hasLegend = true;
     };
 
     /**
@@ -361,16 +397,14 @@ define(function (require) {
       var zoomScale = self.zoomScale(mapZoom);
 
       featureLayer.eachLayer(function (layer) {
-        var latlng = L.latLng(layer.feature.geometry.coordinates[1], layer.feature.geometry.coordinates[0]);
+       var latlng = L.latLng(layer.feature.geometry.coordinates[1], layer.feature.geometry.coordinates[0]);
 
-        var count = layer.feature.properties.count;
-        var rad;
-        if (self._attr.mapType === 'Shaded Circle Markers') {
-          rad = zoomScale * self.quantRadiusScale(precision);
-        } else {
-          rad = zoomScale * self.radiusScale(count, max, precision);
-        }
-        layer.setRadius(rad);
+       var count = layer.feature.properties.count;
+       var rad;
+       if (self._attr.mapType === 'Scaled Circle Markers') {
+         rad = zoomScale * self.radiusScale(count, max, precision);
+         layer.setRadius(rad);
+       }
       });
     };
 
@@ -502,13 +536,13 @@ define(function (require) {
           maxr = 0.20;
           break;
         case 7:
-          maxr = 0.16;
+          maxr = 0.04;
           break;
         case 8:
-          maxr = 0.13;
+          maxr = 0.03;
           break;
         case 9:
-          maxr = 0.11;
+          maxr = 0.02;
           break;
         default:
           maxr = 4.5;
