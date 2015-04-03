@@ -15,7 +15,7 @@ define(function (require) {
           mapType: 'Shaded Circle Markers',
           isDesaturated: true
         },
-        mapTypes: ['Shaded Circle Markers', 'Scaled Circle Markers'],
+        mapTypes: ['Shaded Circle Markers', 'Scaled Circle Markers', 'Heatmap', 'Marker Cluster'],
         editor: require('text!plugins/vis_types/vislib/editors/tile_map.html')
       },
       responseConverter: geoJsonConverter,

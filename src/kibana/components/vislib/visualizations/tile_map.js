@@ -3,6 +3,8 @@ define(function (require) {
     var _ = require('lodash');
     var $ = require('jquery');
     var L = require('leaflet');
+    require('heat');
+    require('markercluster');
 
     var Chart = Private(require('components/vislib/visualizations/_chart'));
     var errors = require('errors');
@@ -108,6 +110,10 @@ define(function (require) {
           if (data.geoJson) {
             if (self._attr.mapType === 'Scaled Circle Markers') {
               featureLayer = self.scaledCircleMarkers(map, data.geoJson);
+            } else if (self._attr.mapType === 'Heatmap') {
+              featureLayer = self.heatMap(map, data.geoJson);
+            } else if (self._attr.mapType === 'Marker Cluster') {
+              featureLayer = self.markerCluster(map, data.geoJson);
             } else {
               featureLayer = self.shadedCircleMarkers(map, data.geoJson);
             }
@@ -147,6 +153,81 @@ define(function (require) {
         });
       };
     };
+
+    /**
+     * Type of data overlay for map:
+     * creates featurelayer from mapData (geoJson)
+     * with leaflet.heat plugin
+     *
+     * @method heatMap
+     * @param map {Object}
+     * @param mapData {Object}
+     * @return {Leaflet object} featureLayer
+     */
+    TileMap.prototype.heatMap = function (map, mapData) {
+      var max = mapData.properties.allmax;
+      var points = this.geoJsonToHeatArray(mapData, max);
+      var options = {
+        // minOpacity: 0.1,
+        // maxZoom: 16,
+        // radius: 15,
+        // blur: 15,
+        // max: 1,
+        // gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+        maxZoom: 12,
+        max: 1,
+        minOpacity: 0.5
+      };
+
+      var featureLayer = L.heatLayer(points, options).addTo(map);
+
+      return featureLayer;
+    };
+
+    TileMap.prototype.markerCluster = function (map, mapData) {
+      var self = this;
+      var max = mapData.properties.allmax;
+      var points = this.geoJsonToHeatArray(mapData, max);
+      var options = {
+        // minOpacity: 0.1,
+        // maxZoom: 16,
+        // radius: 15,
+        // blur: 15,
+        // max: 1,
+        // gradient: {0.4: 'blue', 0.65: 'lime', 1: 'red'}
+        maxZoom: 12,
+        max: 1,
+        minOpacity: 0.5
+      };
+
+      var featureLayer = new L.MarkerClusterGroup({
+        maxClusterRadius: 120,
+        disableClusteringAtZoom: 9
+      }).addTo(map);
+
+      L.geoJson(mapData, {
+        onEachFeature: function (feature, layer) {
+          self.bindPopup(feature, layer);
+          featureLayer.addLayer(layer);
+        }
+      });
+      return featureLayer;
+    };
+
+    TileMap.prototype.geoJsonToHeatArray = function (geoJson, max) {
+      console.log(geoJson, max);
+      var data = geoJson.features.map(function (feature) {
+        return [
+          feature.geometry.coordinates[1],
+          feature.geometry.coordinates[0],
+          feature.properties.count / max
+        ];
+      });
+      return data;
+    };
+
+
+
 
     /**
      * Type of data overlay for map:
