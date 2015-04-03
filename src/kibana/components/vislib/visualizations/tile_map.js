@@ -212,9 +212,6 @@ define(function (require) {
      */
     TileMap.prototype.shadedCircleMarkers = function (map, mapData) {
       var self = this;
-
-      // TODO: add UI to select local min max or all min max
-
       // min and max from chart data for this map
       // var min = mapData.properties.min;
       // var max = mapData.properties.max;
@@ -393,7 +390,6 @@ define(function (require) {
         props.valueLabel + ': ' + props.count
       );
 
-      // TODO: tooltip-like formatter passed in?
       layer.bindPopup(popup)
       .on('mouseover', function (e) {
         layer.openPopup();
